@@ -42,17 +42,10 @@ inputs:
     default: "true"
   rac-version:
     description: >-
-      Exact rac-core version to install from PyPI. Empty
-      installs the latest release. Ignored when `install-from` is `source`.
+      Exact rac-core version to install from PyPI. Empty installs the
+      latest release.
     required: false
     default: ""
-  install-from:
-    description: >-
-      Where to install RAC from: `pypi` (the default for consumers) or
-      `source` (the action checkout itself — used by this repository's own
-      dogfood job; requires `uses: ./` on a full checkout).
-    required: false
-    default: "pypi"
 
 runs:
   using: "composite"
@@ -64,15 +57,10 @@ runs:
     - name: Install RAC
       shell: bash
       env:
-        INSTALL_FROM: ${{ inputs.install-from }}
         RAC_VERSION: ${{ inputs.rac-version }}
       run: |
         python -m pip install --quiet --upgrade pip
-        if [ "$INSTALL_FROM" = "source" ]; then
-          # The action checkout itself; setuptools-scm needs git metadata,
-          # so this path requires `uses: ./` on a real checkout.
-          python -m pip install --quiet "$GITHUB_ACTION_PATH"
-        elif [ -n "$RAC_VERSION" ]; then
+        if [ -n "$RAC_VERSION" ]; then
           python -m pip install --quiet "rac-core==$RAC_VERSION"
         else
           python -m pip install --quiet rac-core

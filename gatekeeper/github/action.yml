@@ -9,9 +9,9 @@
 # analysis and enforcement policy live in the package (ADR-015 / ADR-049); the
 # action never reinterprets findings or decides what is blocking.
 #
-# The Watchkeeper action lives at the repository root and the single-command
-# validate action at `validate-action/`; this gate is referenced as
-# `uses: itsthelore/rac-core/pr-gate-action@<ref>`.
+# The Watchkeeper action lives at `watchkeeper/github/` and the validate
+# (Registrar) action at `registrar/github/`; this gate is referenced as
+# `uses: itsthelore/rac-ci/gatekeeper/github@<ref>`.
 name: "RAC PR gate"
 description: >-
   Enforce a requirements-as-code (RAC) corpus on a pull request with a single
@@ -42,16 +42,9 @@ inputs:
   rac-version:
     description: >-
       Exact rac-core version to install from PyPI. Empty installs the
-      latest release. Ignored when `install-from` is `source`.
+      latest release.
     required: false
     default: ""
-  install-from:
-    description: >-
-      Where to install RAC from: `pypi` (the default for consumers) or `source`
-      (the action checkout itself — for this repository's own dogfood job;
-      requires `uses: ./pr-gate-action` on a full checkout).
-    required: false
-    default: "pypi"
 
 runs:
   using: "composite"
@@ -63,13 +56,10 @@ runs:
     - name: Install RAC
       shell: bash
       env:
-        INSTALL_FROM: ${{ inputs.install-from }}
         RAC_VERSION: ${{ inputs.rac-version }}
       run: |
         python -m pip install --quiet --upgrade pip
-        if [ "$INSTALL_FROM" = "source" ]; then
-          python -m pip install --quiet "$GITHUB_ACTION_PATH/.."
-        elif [ -n "$RAC_VERSION" ]; then
+        if [ -n "$RAC_VERSION" ]; then
           python -m pip install --quiet "rac-core==$RAC_VERSION"
         else
           python -m pip install --quiet rac-core

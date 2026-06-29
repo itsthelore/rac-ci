@@ -1,4 +1,4 @@
-"""Structural tests for the RAC validate composite action (v0.17.2, ADR-058).
+"""Structural tests for the Registrar (validate) composite action (ADR-058).
 
 The action is a thin wrapper over `rac validate --sarif`; its behaviour is owned
 by the (separately tested) CLI. These tests pin the action's *contract* — that it
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import yaml
 
-ACTION = Path(__file__).parent.parent / "validate-action" / "action.yml"
+ACTION = Path(__file__).parent.parent / "registrar" / "github" / "action.yml"
 
 
 def _action() -> dict:
@@ -22,12 +22,12 @@ def _action() -> dict:
 def test_action_is_composite():
     a = _action()
     assert a["runs"]["using"] == "composite"
-    assert a["name"] == "RAC validate"
+    assert a["name"] == "RAC Registrar"
 
 
 def test_action_declares_expected_inputs():
     inputs = _action()["inputs"]
-    for name in ("path", "upload-sarif", "sarif-file", "rac-version", "install-from"):
+    for name in ("path", "upload-sarif", "sarif-file", "rac-version"):
         assert name in inputs, f"missing input: {name}"
     assert inputs["path"]["default"] == "rac"
     assert inputs["upload-sarif"]["default"] == "true"
@@ -54,7 +54,9 @@ def test_action_resurfaces_exit_code():
     assert 'exit "$EXIT_CODE"' in run_steps
 
 
-def test_action_install_supports_source_for_dogfood():
-    # `install-from: source` lets the repo dogfood the action with uses: ./validate-action.
+def test_action_installs_published_rac_core():
+    # The action installs the published rac-core (pinned via rac-version, else
+    # latest); source-install dogfood lives in rac-core's own CI, not here.
     run_steps = " ".join(s.get("run", "") for s in _action()["runs"]["steps"])
-    assert "GITHUB_ACTION_PATH" in run_steps
+    assert "pip install" in run_steps
+    assert "rac-core" in run_steps
