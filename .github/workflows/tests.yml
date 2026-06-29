@@ -1,0 +1,29 @@
+name: tests
+
+# Pin the capability wrappers' contract: each action.yml stays a thin composite
+# action that runs the right `rac` command, uploads SARIF, and re-surfaces the
+# CLI exit code. Structural only (parses YAML) — no engine install needed.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  action-contracts:
+    name: action contracts (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install test deps
+        run: python -m pip install --quiet --upgrade pip pytest pyyaml
+
+      - name: Run action-contract tests
+        run: python -m pytest tests/ -q
