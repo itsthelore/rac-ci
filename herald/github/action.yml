@@ -1,0 +1,144 @@
+# Lore Herald composite action (pr-decision-surfacing design; ADR-034 /
+# ADR-063 / ADR-067).
+#
+# Proclaims the recorded decisions that govern a pull request's changed paths
+# as ONE advisory comment: compute the merge-base diff, run
+# `rac decisions-for --json` per changed path (the live-decisions lookup the
+# CLI and MCP serve, `decision-to-code-proximity`), and post a terse,
+# deduplicated comment that re-runs update in place. Facts, never verdicts
+# (ADR-034): the comment names what governs and recommends review; it never
+# gates the merge — the action succeeds whatever it finds, and only
+# operational breakage fails the step. A thin consumer (ADR-063): matching
+# and liveness live entirely in the engine; nothing is re-derived here. Named
+# a `lore-*` surface per the design (ADR-068) — Herald announces, the
+# Gatekeeper enforces.
+#
+# Siblings: Watchkeeper at `watchkeeper/github/`, the gate at
+# `gatekeeper/github/`, validate at `registrar/github/`. This surface is
+# referenced as `uses: itsthelore/rac-ci/herald/github@<ref>`.
+#
+# Requirements: a pull_request-triggered workflow, `fetch-depth: 0` on the
+# checkout (the diff needs the merge base, like Watchkeeper), and
+# `pull-requests: write` on the job for the comment. On forks, where the
+# token is read-only, the comment falls back to the step summary instead of
+# failing the check.
+name: "Lore decisions on PR"
+description: >-
+  Comment the recorded decisions that govern a pull request's changed paths —
+  id, title, and the declared scope that matched — as one advisory,
+  update-in-place comment. A thin wrapper over `rac decisions-for`; facts,
+  never a merge gate.
+author: "Tom Ballard"
+branding:
+  icon: "book-open"
+  color: "purple"
+inputs:
+  path:
+    description: "The RAC corpus directory (passed to `rac decisions-for`)."
+    required: false
+    default: "rac"
+  max-inline:
+    description: >-
+      Governing decisions listed in full before the rest collapse into a
+      details expander.
+    required: false
+    default: "5"
+  rac-version:
+    description: >-
+      Exact rac-core version to install from PyPI. Empty installs the
+      latest release.
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install RAC
+      shell: bash
+      env:
+        RAC_VERSION: ${{ inputs.rac-version }}
+      run: |
+        python -m pip install --quiet --upgrade pip
+        if [ -n "$RAC_VERSION" ]; then
+          python -m pip install --quiet "rac-core==$RAC_VERSION"
+        else
+          python -m pip install --quiet rac-core
+        fi
+    # The PR's changed paths, from the merge base (triple-dot): what the PR
+    # itself changes, correct even when the base branch has moved ahead.
+    # Requires fetch-depth: 0 on the checkout.
+    - name: Compute changed paths
+      shell: bash
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        if [ -z "$BASE_SHA" ] || [ -z "$HEAD_SHA" ]; then
+          echo "::error::Lore decisions on PR runs on pull_request events only (no base/head sha in this event)."
+          exit 1
+        fi
+        git diff --name-only "$BASE_SHA...$HEAD_SHA" > lore-changed-paths.txt
+        echo "$(wc -l < lore-changed-paths.txt) changed path(s)"
+    # One deterministic comment body: `rac decisions-for --json` per changed
+    # path, merged by decision id, sorted, no wall-clock input — the same
+    # bytes for the same corpus and diff.
+    - name: Render governing decisions
+      id: render
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        MAX_INLINE: ${{ inputs.max-inline }}
+        LINK_BASE: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.event.pull_request.head.sha }}
+      run: |
+        python "$GITHUB_ACTION_PATH/render.py" \
+          --corpus "$INPUT_PATH" \
+          --paths-file lore-changed-paths.txt \
+          --link-base "$LINK_BASE" \
+          --max-inline "$MAX_INLINE" \
+          --out lore-decisions-comment.md
+    # One comment per PR, updated in place on re-runs (found by its marker).
+    # No comment is created when nothing governs; an existing comment is
+    # updated even to the empty state, so it never goes stale. A read-only
+    # token (forks) degrades to the step summary — advisory surfaces never
+    # fail the check.
+    - name: Post or update the comment
+      uses: actions/github-script@v7
+      env:
+        HAS_DECISIONS: ${{ steps.render.outputs.has_decisions }}
+      with:
+        script: |
+          const fs = require('fs');
+          const marker = '<!-- lore-decisions-on-pr -->';
+          const body = fs.readFileSync('lore-decisions-comment.md', 'utf8');
+          const hasDecisions = process.env.HAS_DECISIONS === 'true';
+          try {
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else if (hasDecisions) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            } else {
+              core.info('No governing decisions and no existing comment — nothing to post.');
+            }
+          } catch (error) {
+            core.warning(`Could not post the decisions comment (${error.message}); writing it to the step summary instead.`);
+            await core.summary.addRaw(body).write();
+          }
