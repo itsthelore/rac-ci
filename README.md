@@ -17,6 +17,7 @@ published `rac-core` from PyPI (pin with the `rac-version` input).
 | Watchkeeper | [`watchkeeper/github/`](watchkeeper/github/) | `rac watchkeeper` (PR knowledge review) | `uses: itsthelore/rac-ci/watchkeeper/github@<ref>` |
 | Gatekeeper | [`gatekeeper/github/`](gatekeeper/github/) | `rac gate --sarif` (required merge gate) | `uses: itsthelore/rac-ci/gatekeeper/github@<ref>` |
 | Registrar | [`registrar/github/`](registrar/github/) | `rac validate --sarif` (well-formedness, ADR-058) | `uses: itsthelore/rac-ci/registrar/github@<ref>` |
+| Herald | [`herald/github/`](herald/github/) | `rac decisions-for --json` (advisory governing-decisions comment on PRs) | `uses: itsthelore/rac-ci/herald/github@<ref>` |
 | Recordkeeper | [`recordkeeper/`](recordkeeper/) | read-access audit recorder (ADR-084) | *placeholder — not yet shipped* |
 
 A reusable Watchkeeper workflow is also published at
