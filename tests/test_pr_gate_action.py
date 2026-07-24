@@ -1,6 +1,6 @@
 """Structural tests for the RAC PR-gate composite action (v0.21.14).
 
-The action is a thin wrapper that runs a single `rac gate <path> --sarif` — one
+The action is a thin wrapper that runs a single `decided gate <path> --sarif` — one
 command that composes validation, relationship integrity, and review under the
 corpus enforcement policy — uploads the single SARIF document, and re-surfaces
 the CLI exit code. Its analysis is owned by the (separately tested) CLI; these
@@ -29,7 +29,7 @@ def test_action_is_composite():
 
 def test_action_declares_expected_inputs():
     inputs = _action()["inputs"]
-    for name in ("path", "upload-sarif", "sarif-dir", "rac-version"):
+    for name in ("path", "upload-sarif", "sarif-dir", "asdecided-version"):
         assert name in inputs, f"missing input: {name}"
     assert inputs["path"]["default"] == "rac"
     assert inputs["upload-sarif"]["default"] == "true"
@@ -37,10 +37,10 @@ def test_action_declares_expected_inputs():
 
 def test_action_runs_single_gate_command():
     run_steps = " ".join(s.get("run", "") for s in _action()["runs"]["steps"])
-    assert "rac gate" in run_steps
+    assert "decided gate" in run_steps
     assert "--sarif" in run_steps
     # The three separate checks are now collapsed into the one gate command.
-    assert "rac validate" not in run_steps
+    assert "decided validate" not in run_steps
     assert "rac relationships" not in run_steps
     assert "rac review" not in run_steps
 
@@ -59,9 +59,8 @@ def test_action_resurfaces_exit_code():
     assert 'exit "$EXIT_CODE"' in run_steps
 
 
-def test_action_installs_published_rac_core():
-    # The action installs the published rac-core (pinned via rac-version, else
-    # latest); source-install dogfood lives in rac-core's own CI, not here.
+def test_action_installs_verified_native_engine():
     run_steps = " ".join(s.get("run", "") for s in _action()["runs"]["steps"])
-    assert "pip install" in run_steps
-    assert "rac-core" in run_steps
+    assert "shared/install-native.sh" in run_steps
+    assert "pip install" not in run_steps
+    assert _action()["inputs"]["asdecided-version"]["default"] == "0.23.1"

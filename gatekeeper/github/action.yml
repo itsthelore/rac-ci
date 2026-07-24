@@ -1,7 +1,7 @@
 # RAC PR-gate composite action (v0.21.14, ADR-049 / ADR-063).
 #
 # Carries the full RAC contract into a single required pull-request check:
-# install RAC and run `rac gate` — one command that enforces validation,
+# install RAC and run `decided gate` — one command that enforces validation,
 # relationship integrity, and review under the corpus enforcement policy
 # (`.rac/config.yaml`), emitting one SARIF document (ADR-054). The single SARIF
 # is uploaded to GitHub Code Scanning under one category (`rac-gate`), and the
@@ -11,11 +11,11 @@
 #
 # The Watchkeeper action lives at `watchkeeper/github/` and the validate
 # (Registrar) action at `registrar/github/`; this gate is referenced as
-# `uses: itsthelore/rac-ci/gatekeeper/github@<ref>`.
+# `uses: itsthelore/asdecided-ci/gatekeeper/github@<ref>`.
 name: "RAC PR gate"
 description: >-
   Enforce a requirements-as-code (RAC) corpus on a pull request with a single
-  `rac gate` command — validation, relationship integrity, and review under the
+  `decided gate` command — validation, relationship integrity, and review under the
   corpus enforcement policy — surfaced inline via GitHub Code Scanning (SARIF) as
   a required status check. A thin wrapper over the `rac` CLI.
 author: "Tom Ballard"
@@ -26,7 +26,7 @@ branding:
 
 inputs:
   path:
-    description: "The RAC corpus directory to enforce (passed to `rac gate`)."
+    description: "The RAC corpus directory to enforce (passed to `decided gate`)."
     required: false
     default: "rac"
   upload-sarif:
@@ -39,35 +39,24 @@ inputs:
     description: "Directory the single `gate.sarif` document is written to."
     required: false
     default: "rac-sarif"
-  rac-version:
+  asdecided-version:
     description: >-
-      Exact rac-core version to install from PyPI. Empty installs the
-      latest release.
+      Verified native asdecided-core release to install.
     required: false
-    default: ""
+    default: "0.23.1"
 
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-
-    - name: Install RAC
+    - name: Install AsDecided
       shell: bash
-      env:
-        RAC_VERSION: ${{ inputs.rac-version }}
       run: |
-        python -m pip install --quiet --upgrade pip
-        if [ -n "$RAC_VERSION" ]; then
-          python -m pip install --quiet "rac-core==$RAC_VERSION"
-        else
-          python -m pip install --quiet rac-core
-        fi
+        bash "$GITHUB_ACTION_PATH/../../shared/install-native.sh" \
+          "${{ inputs.asdecided-version }}"
 
     # The CLI is the source of truth (ADR-058). `set +e` lets a non-zero exit
     # still produce SARIF for upload; the exit code is re-surfaced below. One
-    # command, one SARIF document — `rac gate` already composes validation,
+    # command, one SARIF document — `decided gate` already composes validation,
     # relationships, and review under the corpus enforcement policy.
     - name: Run RAC gate (SARIF)
       id: gate
@@ -78,7 +67,7 @@ runs:
       run: |
         set +e
         mkdir -p "$SARIF_DIR"
-        rac gate "$INPUT_PATH" --sarif > "$SARIF_DIR/gate.sarif"
+        decided gate "$INPUT_PATH" --sarif > "$SARIF_DIR/gate.sarif"
         code=$?
         echo "gate exited $code"
         echo "exit_code=$code" >> "$GITHUB_OUTPUT"

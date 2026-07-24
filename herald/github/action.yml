@@ -3,7 +3,7 @@
 #
 # Proclaims the recorded decisions that govern a pull request's changed paths
 # as ONE advisory comment: compute the merge-base diff, run
-# `rac decisions-for --json` per changed path (the live-decisions lookup the
+# `decided decisions-for --json` per changed path (the live-decisions lookup the
 # CLI and MCP serve, `decision-to-code-proximity`), and post a terse,
 # deduplicated comment that re-runs update in place. Facts, never verdicts
 # (ADR-034): the comment names what governs and recommends review; it never
@@ -15,18 +15,18 @@
 #
 # Siblings: Watchkeeper at `watchkeeper/github/`, the gate at
 # `gatekeeper/github/`, validate at `registrar/github/`. This surface is
-# referenced as `uses: itsthelore/rac-ci/herald/github@<ref>`.
+# referenced as `uses: itsthelore/asdecided-ci/herald/github@<ref>`.
 #
 # Requirements: a pull_request-triggered workflow, `fetch-depth: 0` on the
 # checkout (the diff needs the merge base, like Watchkeeper), and
 # `pull-requests: write` on the job for the comment. On forks, where the
 # token is read-only, the comment falls back to the step summary instead of
 # failing the check.
-name: "Lore decisions on PR"
+name: "AsDecided decisions on PR"
 description: >-
   Comment the recorded decisions that govern a pull request's changed paths —
   id, title, and the declared scope that matched — as one advisory,
-  update-in-place comment. A thin wrapper over `rac decisions-for`; facts,
+  update-in-place comment. A thin wrapper over `decided decisions-for`; facts,
   never a merge gate.
 author: "Tom Ballard"
 branding:
@@ -34,7 +34,7 @@ branding:
   color: "purple"
 inputs:
   path:
-    description: "The RAC corpus directory (passed to `rac decisions-for`)."
+    description: "The RAC corpus directory (passed to `decided decisions-for`)."
     required: false
     default: "rac"
   max-inline:
@@ -43,29 +43,22 @@ inputs:
       details expander.
     required: false
     default: "5"
-  rac-version:
+  asdecided-version:
     description: >-
-      Exact rac-core version to install from PyPI. Empty installs the
-      latest release.
+      Verified native asdecided-core release to install.
     required: false
-    default: ""
+    default: "0.23.1"
 runs:
   using: "composite"
   steps:
     - uses: actions/setup-python@v5
       with:
         python-version: "3.12"
-    - name: Install RAC
+    - name: Install AsDecided
       shell: bash
-      env:
-        RAC_VERSION: ${{ inputs.rac-version }}
       run: |
-        python -m pip install --quiet --upgrade pip
-        if [ -n "$RAC_VERSION" ]; then
-          python -m pip install --quiet "rac-core==$RAC_VERSION"
-        else
-          python -m pip install --quiet rac-core
-        fi
+        bash "$GITHUB_ACTION_PATH/../../shared/install-native.sh" \
+          "${{ inputs.asdecided-version }}"
     # The PR's changed paths, from the merge base (triple-dot): what the PR
     # itself changes, correct even when the base branch has moved ahead.
     # Requires fetch-depth: 0 on the checkout.
@@ -76,12 +69,12 @@ runs:
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         if [ -z "$BASE_SHA" ] || [ -z "$HEAD_SHA" ]; then
-          echo "::error::Lore decisions on PR runs on pull_request events only (no base/head sha in this event)."
+          echo "::error::AsDecided decisions on PR runs on pull_request events only (no base/head sha in this event)."
           exit 1
         fi
         git diff --name-only "$BASE_SHA...$HEAD_SHA" > lore-changed-paths.txt
         echo "$(wc -l < lore-changed-paths.txt) changed path(s)"
-    # One deterministic comment body: `rac decisions-for --json` per changed
+    # One deterministic comment body: `decided decisions-for --json` per changed
     # path, merged by decision id, sorted, no wall-clock input — the same
     # bytes for the same corpus and diff.
     - name: Render governing decisions

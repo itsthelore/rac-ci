@@ -1,7 +1,7 @@
 # RAC Watchkeeper composite action (v0.12.3).
 #
 # A thin wrapper: install RAC, resolve the base revision, run one
-# `rac watchkeeper --format github` invocation, and route its outputs —
+# `decided watchkeeper --format github` invocation, and route its outputs —
 # stdout to the step summary, stderr (workflow-command annotations) to the
 # step log. All analysis, rendering, and failure policy live in the Python
 # package (ADR-015); the action never reinterprets exit codes.
@@ -19,7 +19,7 @@ branding:
 inputs:
   path:
     description: >-
-      Corpus directory to compare (passed to `rac watchkeeper`).
+      Corpus directory to compare (passed to `decided watchkeeper`).
     required: false
     default: "rac"
   base:
@@ -30,7 +30,7 @@ inputs:
     default: ""
   fail-on:
     description: >-
-      Failure policy forwarded to `rac watchkeeper --fail-on`:
+      Failure policy forwarded to `decided watchkeeper --fail-on`:
       `error` (fail when review is recommended), `warning` (also fail on
       any warning finding), or `none` (never fail, still report).
     required: false
@@ -40,31 +40,20 @@ inputs:
       Emit inline annotations via workflow commands (`true` or `false`).
     required: false
     default: "true"
-  rac-version:
+  asdecided-version:
     description: >-
-      Exact rac-core version to install from PyPI. Empty installs the
-      latest release.
+      Verified native asdecided-core release to install.
     required: false
-    default: ""
+    default: "0.23.1"
 
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-
-    - name: Install RAC
+    - name: Install AsDecided
       shell: bash
-      env:
-        RAC_VERSION: ${{ inputs.rac-version }}
       run: |
-        python -m pip install --quiet --upgrade pip
-        if [ -n "$RAC_VERSION" ]; then
-          python -m pip install --quiet "rac-core==$RAC_VERSION"
-        else
-          python -m pip install --quiet rac-core
-        fi
+        bash "$GITHUB_ACTION_PATH/../../shared/install-native.sh" \
+          "${{ inputs.asdecided-version }}"
 
     - name: Resolve base revision
       shell: bash
@@ -102,7 +91,7 @@ runs:
         # stdout becomes the job's step summary; stderr stays in the live
         # step log where the runner parses the annotation commands. The
         # exit code propagates unchanged — policy lives in --fail-on.
-        rac watchkeeper "$INPUT_PATH" \
+        decided watchkeeper "$INPUT_PATH" \
           --base "$WATCHKEEPER_BASE" \
           --format github \
           --fail-on "$FAIL_ON" \

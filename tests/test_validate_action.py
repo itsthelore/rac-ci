@@ -1,8 +1,8 @@
 """Structural tests for the Registrar (validate) composite action (ADR-058).
 
-The action is a thin wrapper over `rac validate --sarif`; its behaviour is owned
+The action is a thin wrapper over `decided validate --sarif`; its behaviour is owned
 by the (separately tested) CLI. These tests pin the action's *contract* — that it
-stays a composite action that runs `rac validate --sarif`, uploads SARIF, and
+stays a composite action that runs `decided validate --sarif`, uploads SARIF, and
 re-surfaces the CLI exit code — so the wiring cannot silently drift.
 """
 
@@ -27,7 +27,7 @@ def test_action_is_composite():
 
 def test_action_declares_expected_inputs():
     inputs = _action()["inputs"]
-    for name in ("path", "upload-sarif", "sarif-file", "rac-version"):
+    for name in ("path", "upload-sarif", "sarif-file", "asdecided-version"):
         assert name in inputs, f"missing input: {name}"
     assert inputs["path"]["default"] == "rac"
     assert inputs["upload-sarif"]["default"] == "true"
@@ -36,7 +36,7 @@ def test_action_declares_expected_inputs():
 def test_action_runs_rac_validate_sarif():
     steps = _action()["runs"]["steps"]
     run_steps = " ".join(s.get("run", "") for s in steps)
-    assert "rac validate" in run_steps
+    assert "decided validate" in run_steps
     assert "--sarif" in run_steps
 
 
@@ -54,9 +54,8 @@ def test_action_resurfaces_exit_code():
     assert 'exit "$EXIT_CODE"' in run_steps
 
 
-def test_action_installs_published_rac_core():
-    # The action installs the published rac-core (pinned via rac-version, else
-    # latest); source-install dogfood lives in rac-core's own CI, not here.
+def test_action_installs_verified_native_engine():
     run_steps = " ".join(s.get("run", "") for s in _action()["runs"]["steps"])
-    assert "pip install" in run_steps
-    assert "rac-core" in run_steps
+    assert "shared/install-native.sh" in run_steps
+    assert "pip install" not in run_steps
+    assert _action()["inputs"]["asdecided-version"]["default"] == "0.23.1"
