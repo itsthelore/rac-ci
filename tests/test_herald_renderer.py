@@ -2,7 +2,7 @@
 
 Unlike the structural action-contract tests, these exercise the real published
 engine: build a tiny corpus, shell `render.py` (which shells
-`rac decisions-for --json` per changed path — the same contract the wrapper
+`decided decisions-for --json` per changed path — the same contract the wrapper
 consumes in the field, ADR-063), and pin the rendered comment. Facts, never
 verdicts (ADR-034): governed and ungoverned diffs both exit 0, and the same
 corpus and diff must render byte-identical output.
@@ -11,13 +11,14 @@ corpus and diff must render byte-identical output.
 from __future__ import annotations
 
 import subprocess
+import shutil
 import sys
 from pathlib import Path
 
 RENDER = Path(__file__).parent.parent / "herald" / "github" / "render.py"
 
-# The `rac` console script installed alongside the interpreter running pytest.
-RAC_BIN = Path(sys.executable).parent / "rac"
+# The native engine installed by the workflow (or local developer environment).
+DECIDED_BIN = shutil.which("decided") or "decided"
 
 LINK_BASE = "https://example.com/blob/HEAD"
 
@@ -89,8 +90,8 @@ def _render(
             str(max_inline),
             "--out",
             str(out),
-            "--rac-bin",
-            str(RAC_BIN),
+            "--decided-bin",
+            str(DECIDED_BIN),
         ],
         cwd=repo,
         capture_output=True,

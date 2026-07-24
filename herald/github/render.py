@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the decisions-on-PR comment from `rac decisions-for --json`.
+"""Render the decisions-on-PR comment from `decided decisions-for --json`.
 
 The thin-client half of the `pr-decision-surfacing` design (ADR-063): run the
 engine's live-decisions lookup for each changed path, merge by decision id,
@@ -34,17 +34,17 @@ EMPTY_BODY = (
 _PATHS_SHOWN = 3
 
 
-def _lookup(rac_bin: str, path: str, corpus: str) -> dict | None:
-    """One `rac decisions-for <path> <corpus> --json` call, parsed, or None."""
+def _lookup(decided_bin: str, path: str, corpus: str) -> dict | None:
+    """One `decided decisions-for <path> <corpus> --json` call, parsed, or None."""
     try:
         proc = subprocess.run(
-            [rac_bin, "decisions-for", path, corpus, "--json"],
+            [decided_bin, "decisions-for", path, corpus, "--json"],
             capture_output=True,
             text=True,
             check=False,
         )
     except FileNotFoundError:
-        print(f"error: rac binary not found: {rac_bin!r}", file=sys.stderr)
+        print(f"error: decided binary not found: {decided_bin!r}", file=sys.stderr)
         raise SystemExit(1) from None
     if proc.returncode != 0:
         print(
@@ -59,7 +59,7 @@ def _lookup(rac_bin: str, path: str, corpus: str) -> dict | None:
         return None
 
 
-def collect(rac_bin: str, corpus: str, changed_paths: list[str]) -> list[dict]:
+def collect(decided_bin: str, corpus: str, changed_paths: list[str]) -> list[dict]:
     """Governing decisions merged across paths, sorted by decision id.
 
     Each entry: id, title, status, path (the artifact file), matching entries
@@ -68,7 +68,7 @@ def collect(rac_bin: str, corpus: str, changed_paths: list[str]) -> list[dict]:
     """
     merged: dict[str, dict] = {}
     for changed in changed_paths:
-        result = _lookup(rac_bin, changed, corpus)
+        result = _lookup(decided_bin, changed, corpus)
         if not result:
             continue
         for decision in result.get("decisions", []):
@@ -143,11 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--link-base", default="")
     parser.add_argument("--max-inline", type=int, default=5)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--rac-bin", default="rac")
+    parser.add_argument("--decided-bin", default="decided")
     args = parser.parse_args(argv)
     with open(args.paths_file, encoding="utf-8") as fh:
         changed_paths = sorted({line.strip() for line in fh if line.strip()})
-    decisions = collect(args.rac_bin, args.corpus, changed_paths)
+    decisions = collect(args.decided_bin, args.corpus, changed_paths)
     body = render(decisions, args.link_base.rstrip("/"), args.max_inline)
     with open(args.out, "w", encoding="utf-8") as fh:
         fh.write(body)

@@ -1,6 +1,6 @@
-"""Structural tests for the Lore decisions-on-PR (Herald) composite action.
+"""Structural tests for the AsDecided decisions-on-PR (Herald) action.
 
-The action is a thin wrapper (ADR-063) over `rac decisions-for --json`: compute
+The action is a thin wrapper (ADR-063) over `decided decisions-for --json`: compute
 the PR's merge-base diff, render one deterministic advisory comment, and post it
 update-in-place. Matching and liveness are the engine's; these tests pin the
 action's *contract* — inputs, the triple-dot diff, the renderer hand-off, and
@@ -30,22 +30,21 @@ def _step(name_fragment: str) -> dict:
 def test_action_is_composite():
     a = _action()
     assert a["runs"]["using"] == "composite"
-    assert a["name"] == "Lore decisions on PR"
+    assert a["name"] == "AsDecided decisions on PR"
 
 
 def test_action_declares_exactly_expected_inputs():
     inputs = _action()["inputs"]
-    assert set(inputs) == {"path", "max-inline", "rac-version"}
+    assert set(inputs) == {"path", "max-inline", "asdecided-version"}
     assert inputs["path"]["default"] == "rac"
     assert inputs["max-inline"]["default"] == "5"
 
 
-def test_action_installs_published_rac_core():
-    # Published engine only (pinned via rac-version, else latest); no
-    # source-install mode reaching outside the action directory.
+def test_action_installs_verified_native_engine():
     run_steps = " ".join(s.get("run", "") for s in _action()["runs"]["steps"])
-    assert "rac-core" in run_steps
-    assert "GITHUB_ACTION_PATH/.." not in run_steps
+    assert "shared/install-native.sh" in run_steps
+    assert "pip install" not in run_steps
+    assert _action()["inputs"]["asdecided-version"]["default"] == "0.23.1"
 
 
 def test_action_diffs_from_the_merge_base():
