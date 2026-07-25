@@ -11,7 +11,7 @@
 #
 # The Watchkeeper action lives at `watchkeeper/github/` and the validate
 # (Registrar) action at `registrar/github/`; this gate is referenced as
-# `uses: itsthelore/asdecided-ci/gatekeeper/github@<ref>`.
+# `uses: asdecided/ci/gatekeeper/github@<ref>`.
 name: "RAC PR gate"
 description: >-
   Enforce a requirements-as-code (RAC) corpus on a pull request with a single
