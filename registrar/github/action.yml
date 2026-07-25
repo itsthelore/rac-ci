@@ -5,7 +5,7 @@
 # severity policy live in the package (ADR-015 / ADR-053); the action never
 # reinterprets findings. The Watchkeeper action lives at `watchkeeper/github/`;
 # this Registrar (validate) action is referenced as
-# `uses: itsthelore/asdecided-ci/registrar/github@<ref>`.
+# `uses: asdecided/ci/registrar/github@<ref>`.
 name: "RAC Registrar"
 description: >-
   Validate a requirements-as-code (RAC) corpus and surface findings on the pull

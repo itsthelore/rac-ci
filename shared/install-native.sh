@@ -32,7 +32,7 @@ esac
 
 install_dir="${RUNNER_TEMP}/asdecided-${version}"
 download="${RUNNER_TEMP}/${archive}"
-url="https://github.com/itsthelore/asdecided-core/releases/download/v${version}/${archive}"
+url="https://github.com/asdecided/core/releases/download/v${version}/${archive}"
 
 mkdir -p "$install_dir"
 curl --fail --location --retry 3 --silent --show-error "$url" --output "$download"

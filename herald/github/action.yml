@@ -15,7 +15,7 @@
 #
 # Siblings: Watchkeeper at `watchkeeper/github/`, the gate at
 # `gatekeeper/github/`, validate at `registrar/github/`. This surface is
-# referenced as `uses: itsthelore/asdecided-ci/herald/github@<ref>`.
+# referenced as `uses: asdecided/ci/herald/github@<ref>`.
 #
 # Requirements: a pull_request-triggered workflow, `fetch-depth: 0` on the
 # checkout (the diff needs the merge base, like Watchkeeper), and
