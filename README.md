@@ -1,16 +1,21 @@
 # AsDecided CI
 
-The CI delivery surface for [RAC](https://github.com/asdecided/core)
-(requirements-as-code) — one subdir per **capability**, with delivery platforms
-nested inside (`github/` first). Per ADR-092 (one repo per concern, subdir per
-member) this consolidates the CI wrappers that previously lived in `asdecided-core` and
-in the standalone `rac-actions` / `lore-watchkeeper` / `lore-gatekeeper` repos.
+**Make recorded decisions part of the merge gate.**
 
-Every capability is a **thin wrapper over the public `decided` CLI** (ADR-063);
-all analysis and policy live in the native engine. The wrappers download a
-checksum-verified `asdecided-core` release (pin with the
-`asdecided-version` input). Python is used only by Herald's comment renderer,
-not as the engine.
+AsDecided CI adds native validation, relationship checks, knowledge review, and
+decision surfacing to GitHub pull requests. Each action downloads a
+checksum-verified [`asdecided/core`](https://github.com/asdecided/core) release
+and delegates policy to the public `decided` CLI instead of reimplementing the
+engine in workflow code.
+
+```yaml
+- uses: asdecided/ci/gatekeeper/github@v1
+  with:
+    path: decisions
+```
+
+Use a commit SHA instead of `v1` when your dependency policy requires immutable
+action references.
 
 ## Capabilities
 
@@ -33,7 +38,7 @@ the wrappers, not the engine.
 ## History
 
 The `watchkeeper/`, `gatekeeper/`, and `registrar/` wrappers moved here from
-`asdecided-core` with history preserved (ADR-092 convergence). Consumers pinned to the
+`asdecided/core` with history preserved (ADR-092 convergence). Consumers pinned to the
 old `asdecided/core@<tag>`, `…/pr-gate-action@v0`, or `…/validate-action@v0`
 paths keep resolving on those tags; new consumers use the `asdecided/ci` paths
 above.
