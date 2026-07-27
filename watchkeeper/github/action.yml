@@ -44,7 +44,7 @@ inputs:
     description: >-
       Verified native asdecided-core release to install.
     required: false
-    default: "0.23.1"
+    default: "0.24.0"
 
 runs:
   using: "composite"

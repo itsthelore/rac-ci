@@ -63,4 +63,4 @@ def test_action_installs_verified_native_engine():
     run_steps = " ".join(s.get("run", "") for s in _action()["runs"]["steps"])
     assert "shared/install-native.sh" in run_steps
     assert "pip install" not in run_steps
-    assert _action()["inputs"]["asdecided-version"]["default"] == "0.23.1"
+    assert _action()["inputs"]["asdecided-version"]["default"] == "0.24.0"
