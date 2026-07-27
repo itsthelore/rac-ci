@@ -3,8 +3,8 @@
 #
 # Proclaims the recorded decisions that govern a pull request's changed paths
 # as ONE advisory comment: compute the merge-base diff, run
-# `decided decisions-for --json` per changed path (the live-decisions lookup the
-# CLI and MCP serve, `decision-to-code-proximity`), and post a terse,
+# native `decided herald` renderer (built on the live-decisions lookup the CLI
+# and MCP serve, `decision-to-code-proximity`), and post a terse,
 # deduplicated comment that re-runs update in place. Facts, never verdicts
 # (ADR-034): the comment names what governs and recommends review; it never
 # gates the merge — the action succeeds whatever it finds, and only
@@ -22,11 +22,11 @@
 # `pull-requests: write` on the job for the comment. On forks, where the
 # token is read-only, the comment falls back to the step summary instead of
 # failing the check.
-name: "AsDecided decisions on PR"
+name: "As Decided Herald"
 description: >-
   Comment the recorded decisions that govern a pull request's changed paths —
   id, title, and the declared scope that matched — as one advisory,
-  update-in-place comment. A thin wrapper over `decided decisions-for`; facts,
+  update-in-place comment. A thin wrapper over `decided herald`; facts,
   never a merge gate.
 author: "Tom Ballard"
 branding:
@@ -34,9 +34,9 @@ branding:
   color: "purple"
 inputs:
   path:
-    description: "The RAC corpus directory (passed to `decided decisions-for`)."
+    description: "The As Decided corpus directory."
     required: false
-    default: "rac"
+    default: "decisions"
   max-inline:
     description: >-
       Governing decisions listed in full before the rest collapse into a
@@ -51,9 +51,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
     - name: Install AsDecided
       shell: bash
       run: |
@@ -74,9 +71,8 @@ runs:
         fi
         git diff --name-only "$BASE_SHA...$HEAD_SHA" > lore-changed-paths.txt
         echo "$(wc -l < lore-changed-paths.txt) changed path(s)"
-    # One deterministic comment body: `decided decisions-for --json` per changed
-    # path, merged by decision id, sorted, no wall-clock input — the same
-    # bytes for the same corpus and diff.
+    # The native engine owns collection, deduplication, sorting, and rendering.
+    # The same corpus and diff produce the same bytes; no Python sidecar.
     - name: Render governing decisions
       id: render
       shell: bash
@@ -85,12 +81,12 @@ runs:
         MAX_INLINE: ${{ inputs.max-inline }}
         LINK_BASE: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.event.pull_request.head.sha }}
       run: |
-        python "$GITHUB_ACTION_PATH/render.py" \
-          --corpus "$INPUT_PATH" \
+        decided herald "$INPUT_PATH" \
           --paths-file lore-changed-paths.txt \
           --link-base "$LINK_BASE" \
           --max-inline "$MAX_INLINE" \
-          --out lore-decisions-comment.md
+          --out lore-decisions-comment.md \
+          --github-output "$GITHUB_OUTPUT"
     # One comment per PR, updated in place on re-runs (found by its marker).
     # No comment is created when nothing governs; an existing comment is
     # updated even to the empty state, so it never goes stale. A read-only

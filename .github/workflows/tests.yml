@@ -26,28 +26,4 @@ jobs:
         run: python -m pip install --quiet --upgrade pip pytest pyyaml
 
       - name: Run action-contract tests
-        run: python -m pytest tests/ -q --ignore=tests/test_herald_renderer.py
-
-  # The Herald renderer is behavioral, not just structural: it shells the real
-  # `decided decisions-for --json` (published asdecided-core — the same contract the
-  # wrapper consumes in the field, ADR-063) and must render byte-identical
-  # comments for the same corpus and diff. Kept out of the structural job so
-  # that tier stays engine-free.
-  herald-renderer:
-    name: herald renderer (published engine)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Install test deps
-        run: python -m pip install --quiet --upgrade pip pytest
-
-      - name: Install the verified native engine
-        run: bash shared/install-native.sh 0.23.1
-
-      - name: Run the renderer battery
-        run: python -m pytest tests/test_herald_renderer.py -q
+        run: python -m pytest tests/ -q

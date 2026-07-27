@@ -22,14 +22,14 @@ def _action() -> dict:
 def test_action_is_composite():
     a = _action()
     assert a["runs"]["using"] == "composite"
-    assert a["name"] == "RAC Registrar"
+    assert a["name"] == "As Decided Registrar"
 
 
 def test_action_declares_expected_inputs():
     inputs = _action()["inputs"]
     for name in ("path", "upload-sarif", "sarif-file", "asdecided-version"):
         assert name in inputs, f"missing input: {name}"
-    assert inputs["path"]["default"] == "rac"
+    assert inputs["path"]["default"] == "decisions"
     assert inputs["upload-sarif"]["default"] == "true"
 
 

@@ -1,6 +1,6 @@
-"""Structural tests for the AsDecided decisions-on-PR (Herald) action.
+"""Structural tests for the native As Decided Herald action.
 
-The action is a thin wrapper (ADR-063) over `decided decisions-for --json`: compute
+The action is a thin wrapper (ADR-063) over `decided herald`: compute
 the PR's merge-base diff, render one deterministic advisory comment, and post it
 update-in-place. Matching and liveness are the engine's; these tests pin the
 action's *contract* — inputs, the triple-dot diff, the renderer hand-off, and
@@ -30,13 +30,13 @@ def _step(name_fragment: str) -> dict:
 def test_action_is_composite():
     a = _action()
     assert a["runs"]["using"] == "composite"
-    assert a["name"] == "AsDecided decisions on PR"
+    assert a["name"] == "As Decided Herald"
 
 
 def test_action_declares_exactly_expected_inputs():
     inputs = _action()["inputs"]
     assert set(inputs) == {"path", "max-inline", "asdecided-version"}
-    assert inputs["path"]["default"] == "rac"
+    assert inputs["path"]["default"] == "decisions"
     assert inputs["max-inline"]["default"] == "5"
 
 
@@ -54,10 +54,12 @@ def test_action_diffs_from_the_merge_base():
     assert "pull_request events only" in diff
 
 
-def test_action_delegates_rendering_to_render_py():
+def test_action_delegates_rendering_to_native_engine():
     render = _step("Render governing decisions")["run"]
-    assert "$GITHUB_ACTION_PATH/render.py" in render
-    assert (ACTION.parent / "render.py").is_file()
+    assert "decided herald" in render
+    assert "--github-output" in render
+    assert "python" not in render
+    assert not (ACTION.parent / "render.py").exists()
 
 
 def test_action_comment_step_updates_in_place_and_never_gates():

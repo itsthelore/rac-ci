@@ -12,12 +12,12 @@
 # The Watchkeeper action lives at `watchkeeper/github/` and the validate
 # (Registrar) action at `registrar/github/`; this gate is referenced as
 # `uses: asdecided/ci/gatekeeper/github@<ref>`.
-name: "RAC PR gate"
+name: "As Decided Gatekeeper"
 description: >-
-  Enforce a requirements-as-code (RAC) corpus on a pull request with a single
+  Enforce an As Decided knowledge corpus on a pull request with a single
   `decided gate` command — validation, relationship integrity, and review under the
   corpus enforcement policy — surfaced inline via GitHub Code Scanning (SARIF) as
-  a required status check. A thin wrapper over the `rac` CLI.
+  a required status check. A thin wrapper over the native `decided` CLI.
 author: "Tom Ballard"
 
 branding:
@@ -26,9 +26,9 @@ branding:
 
 inputs:
   path:
-    description: "The RAC corpus directory to enforce (passed to `decided gate`)."
+    description: "The As Decided corpus directory to enforce."
     required: false
-    default: "rac"
+    default: "decisions"
   upload-sarif:
     description: >-
       Upload SARIF to GitHub Code Scanning (`true` or `false`). Requires the job
@@ -79,7 +79,7 @@ runs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ inputs.sarif-dir }}/gate.sarif
-        category: rac-gate
+        category: asdecided-gatekeeper
 
     # Any non-zero CLI exit fails the check; the Code Scanning annotations show
     # every finding, blocking and advisory. What is blocking is decided by the
@@ -90,7 +90,7 @@ runs:
         EXIT_CODE: ${{ steps.gate.outputs.exit_code }}
       run: |
         if [ "$EXIT_CODE" != "0" ]; then
-          echo "::error::RAC PR gate failed (exit $EXIT_CODE) — see the Code Scanning annotations."
+          echo "::error::As Decided Gatekeeper failed (exit $EXIT_CODE) — see Code Scanning annotations."
           exit "$EXIT_CODE"
         fi
-        echo "RAC PR gate passed."
+        echo "As Decided Gatekeeper passed."
