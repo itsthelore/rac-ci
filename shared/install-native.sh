@@ -1,31 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${1:-0.23.1}"
+version="${1:-0.24.0}"
 version="${version#v}"
-if [[ "$version" != "0.23.1" ]]; then
-  echo "::error::asdecided-ci does not have a verified checksum for asdecided-core $version"
-  exit 1
-fi
 
 case "${RUNNER_OS:-}-$(uname -m)" in
   Linux-x86_64)
     archive="asdecided-x86_64-unknown-linux-gnu.tar.gz"
-    digest="51cce8025a7cb2f8b2caea93a8ea71be0ad8c5c316fd0ecced688267bf97b8ac"
     executable="decided"
     ;;
   macOS-arm64)
     archive="asdecided-aarch64-apple-darwin.tar.gz"
-    digest="40d7129541609cbcf967f7d7d453e7689412bbaac81aa8d3c84e636367804628"
     executable="decided"
     ;;
   Windows-x86_64)
     archive="asdecided-x86_64-pc-windows-msvc.zip"
-    digest="14e3fd9b1c693a11f364f51587f74ec7f9ba6fa09ae183e049bc4b378d35cd25"
     executable="decided.exe"
     ;;
   *)
     echo "::error::Unsupported runner: ${RUNNER_OS:-unknown} $(uname -m)"
+    exit 1
+    ;;
+esac
+
+case "$version:$archive" in
+  0.23.1:asdecided-x86_64-unknown-linux-gnu.tar.gz)
+    digest="51cce8025a7cb2f8b2caea93a8ea71be0ad8c5c316fd0ecced688267bf97b8ac"
+    ;;
+  0.23.1:asdecided-aarch64-apple-darwin.tar.gz)
+    digest="40d7129541609cbcf967f7d7d453e7689412bbaac81aa8d3c84e636367804628"
+    ;;
+  0.23.1:asdecided-x86_64-pc-windows-msvc.zip)
+    digest="14e3fd9b1c693a11f364f51587f74ec7f9ba6fa09ae183e049bc4b378d35cd25"
+    ;;
+  0.24.0:asdecided-x86_64-unknown-linux-gnu.tar.gz)
+    digest="53e36eebb34a58d59fc92a0b23eda3a35d2f0f17a84fad6b4339759ce4f855f4"
+    ;;
+  0.24.0:asdecided-aarch64-apple-darwin.tar.gz)
+    digest="f87d0e3a77ffe6ef6249ec43cd5908a94f84d22e030f94bbd2fecbf91933926b"
+    ;;
+  0.24.0:asdecided-x86_64-pc-windows-msvc.zip)
+    digest="e3069423ecb523186ff8b7d798a93e55385fccf5851dad46b81d8bffae39486c"
+    ;;
+  *)
+    echo "::error::asdecided-ci does not have a verified checksum for asdecided-core $version"
     exit 1
     ;;
 esac

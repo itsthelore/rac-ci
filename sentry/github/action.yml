@@ -1,0 +1,111 @@
+name: "As Decided Sentry"
+description: >-
+  Enforce deterministic decision constraints against pull-request source
+  changes and surface violations through GitHub Code Scanning.
+author: "Tom Ballard"
+
+branding:
+  icon: "shield"
+  color: "yellow"
+
+inputs:
+  path:
+    description: "Decision corpus directory passed to `decided sentry`."
+    required: false
+    default: "decisions"
+  repository:
+    description: "Repository root containing the source code to enforce."
+    required: false
+    default: "."
+  base:
+    description: >-
+      Git base revision. Empty resolves to the pull request base SHA.
+    required: false
+    default: ""
+  full:
+    description: "Check the complete repository tree instead of changed lines."
+    required: false
+    default: "false"
+  upload-sarif:
+    description: >-
+      Upload SARIF to GitHub Code Scanning (`true` or `false`). Requires
+      `security-events: write`.
+    required: false
+    default: "true"
+  sarif-file:
+    description: "Where the Sentry SARIF document is written."
+    required: false
+    default: "asdecided-sentry.sarif"
+  asdecided-version:
+    description: "Verified native asdecided-core release to install."
+    required: false
+    default: "0.24.0"
+
+outputs:
+  exit-code:
+    description: "The native Sentry process exit code."
+    value: ${{ steps.sentry.outputs.exit_code }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install As Decided
+      shell: bash
+      run: |
+        bash "$GITHUB_ACTION_PATH/../../shared/install-native.sh" \
+          "${{ inputs.asdecided-version }}"
+
+    - name: Resolve enforcement mode
+      shell: bash
+      env:
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_FULL: ${{ inputs.full }}
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        if [ "$INPUT_FULL" = "true" ]; then
+          echo "SENTRY_MODE=--full" >> "$GITHUB_ENV"
+          exit 0
+        fi
+        BASE="$INPUT_BASE"
+        if [ -z "$BASE" ]; then
+          BASE="$PR_BASE_SHA"
+        fi
+        if [ -z "$BASE" ]; then
+          echo "::error::Sentry needs a base revision outside a pull_request event; set the base input or use full=true."
+          exit 2
+        fi
+        echo "SENTRY_MODE=--base $BASE" >> "$GITHUB_ENV"
+
+    - name: Run As Decided Sentry
+      id: sentry
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        SARIF_FILE: ${{ inputs.sarif-file }}
+      run: |
+        set +e
+        decided sentry "$INPUT_PATH" \
+          --repository "$INPUT_REPOSITORY" \
+          $SENTRY_MODE \
+          --sarif > "$SARIF_FILE"
+        code=$?
+        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+
+    - name: Upload Sentry SARIF
+      if: ${{ always() && inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        category: asdecided-sentry
+
+    - name: Report result
+      shell: bash
+      env:
+        EXIT_CODE: ${{ steps.sentry.outputs.exit_code }}
+      run: |
+        if [ "$EXIT_CODE" != "0" ]; then
+          echo "::error::As Decided Sentry failed (exit $EXIT_CODE) — see Code Scanning annotations."
+          exit "$EXIT_CODE"
+        fi
+        echo "As Decided Sentry passed."

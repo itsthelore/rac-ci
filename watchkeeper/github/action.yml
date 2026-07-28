@@ -5,7 +5,7 @@
 # stdout to the step summary, stderr (workflow-command annotations) to the
 # step log. All analysis, rendering, and failure policy live in the Python
 # package (ADR-015); the action never reinterprets exit codes.
-name: "RAC Watchkeeper"
+name: "As Decided Watchkeeper"
 description: >-
   Review product knowledge changes (requirements, decisions, roadmaps,
   designs, prompts) on pull requests: changed artifacts, validation and
@@ -21,7 +21,7 @@ inputs:
     description: >-
       Corpus directory to compare (passed to `decided watchkeeper`).
     required: false
-    default: "rac"
+    default: "decisions"
   base:
     description: >-
       Base state: a git revision or a directory. Empty (the default)
@@ -44,7 +44,7 @@ inputs:
     description: >-
       Verified native asdecided-core release to install.
     required: false
-    default: "0.23.1"
+    default: "0.24.0"
 
 runs:
   using: "composite"

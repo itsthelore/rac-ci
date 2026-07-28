@@ -24,14 +24,14 @@ def _action() -> dict:
 def test_action_is_composite():
     a = _action()
     assert a["runs"]["using"] == "composite"
-    assert a["name"] == "RAC PR gate"
+    assert a["name"] == "As Decided Gatekeeper"
 
 
 def test_action_declares_expected_inputs():
     inputs = _action()["inputs"]
     for name in ("path", "upload-sarif", "sarif-dir", "asdecided-version"):
         assert name in inputs, f"missing input: {name}"
-    assert inputs["path"]["default"] == "rac"
+    assert inputs["path"]["default"] == "decisions"
     assert inputs["upload-sarif"]["default"] == "true"
 
 
@@ -51,7 +51,7 @@ def test_action_uploads_single_sarif_once():
     assert len(uploads) == 1, "the gate uploads exactly one SARIF document"
     # Upload even on failure so findings still annotate the PR.
     assert "always()" in uploads[0]["if"]
-    assert uploads[0]["with"]["category"] == "rac-gate"
+    assert uploads[0]["with"]["category"] == "asdecided-gatekeeper"
 
 
 def test_action_resurfaces_exit_code():
@@ -63,4 +63,4 @@ def test_action_installs_verified_native_engine():
     run_steps = " ".join(s.get("run", "") for s in _action()["runs"]["steps"])
     assert "shared/install-native.sh" in run_steps
     assert "pip install" not in run_steps
-    assert _action()["inputs"]["asdecided-version"]["default"] == "0.23.1"
+    assert _action()["inputs"]["asdecided-version"]["default"] == "0.24.0"

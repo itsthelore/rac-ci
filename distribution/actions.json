@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "facades": [
+    {"name": "gatekeeper", "source": "gatekeeper/github", "marketplace": true},
+    {"name": "herald", "source": "herald/github", "marketplace": true},
+    {"name": "recordkeeper", "source": "recordkeeper", "marketplace": false},
+    {"name": "registrar", "source": "registrar/github", "marketplace": true},
+    {"name": "watchkeeper", "source": "watchkeeper/github", "marketplace": true},
+    {"name": "sentry", "source": "sentry/github", "marketplace": true}
+  ]
+}
