@@ -39,7 +39,7 @@ inputs:
   asdecided-version:
     description: "Verified native asdecided-core release to install."
     required: false
-    default: "0.24.0"
+    default: "0.25.1"
 
 outputs:
   exit-code:
@@ -55,40 +55,39 @@ runs:
         bash "$GITHUB_ACTION_PATH/../../shared/install-native.sh" \
           "${{ inputs.asdecided-version }}"
 
-    - name: Resolve enforcement mode
-      shell: bash
-      env:
-        INPUT_BASE: ${{ inputs.base }}
-        INPUT_FULL: ${{ inputs.full }}
-        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      run: |
-        if [ "$INPUT_FULL" = "true" ]; then
-          echo "SENTRY_MODE=--full" >> "$GITHUB_ENV"
-          exit 0
-        fi
-        BASE="$INPUT_BASE"
-        if [ -z "$BASE" ]; then
-          BASE="$PR_BASE_SHA"
-        fi
-        if [ -z "$BASE" ]; then
-          echo "::error::Sentry needs a base revision outside a pull_request event; set the base input or use full=true."
-          exit 2
-        fi
-        echo "SENTRY_MODE=--base $BASE" >> "$GITHUB_ENV"
-
     - name: Run As Decided Sentry
       id: sentry
       shell: bash
       env:
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_FULL: ${{ inputs.full }}
         INPUT_PATH: ${{ inputs.path }}
         INPUT_REPOSITORY: ${{ inputs.repository }}
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         SARIF_FILE: ${{ inputs.sarif-file }}
       run: |
         set +e
-        decided sentry "$INPUT_PATH" \
-          --repository "$INPUT_REPOSITORY" \
-          $SENTRY_MODE \
-          --sarif > "$SARIF_FILE"
+        if [ "$INPUT_FULL" = "true" ]; then
+          decided sentry "$INPUT_PATH" \
+            --repository "$INPUT_REPOSITORY" \
+            --full \
+            --sarif > "$SARIF_FILE"
+        else
+          BASE="$INPUT_BASE"
+          if [ -z "$BASE" ]; then
+            BASE="$PR_BASE_SHA"
+          fi
+          if [ -z "$BASE" ]; then
+            echo "::error::Sentry needs a base revision outside a pull_request event; set the base input or use full=true."
+            code=2
+            echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          decided sentry "$INPUT_PATH" \
+            --repository "$INPUT_REPOSITORY" \
+            --base "$BASE" \
+            --sarif > "$SARIF_FILE"
+        fi
         code=$?
         echo "exit_code=$code" >> "$GITHUB_OUTPUT"
 

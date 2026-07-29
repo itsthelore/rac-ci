@@ -41,4 +41,9 @@ def test_packager_emits_root_actions_with_facade_relative_installer(tmp_path):
         assert "../../shared/install-native.sh" not in action
         assert (output / name / "shared" / "install-native.sh").is_file()
         assert "pip install" not in action
+    sentry = output / "sentry"
+    assert "Deterministic code enforcement" in (
+        sentry / "README.md"
+    ).read_text(encoding="utf-8")
+    assert 'default: "0.25.1"' in (sentry / "action.yml").read_text(encoding="utf-8")
     assert not (output / "recordkeeper" / "action.yml").exists()

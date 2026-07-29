@@ -24,9 +24,12 @@ def test_sentry_supports_diff_and_full_tree_modes():
     inputs = action()["inputs"]
     assert inputs["base"]["default"] == ""
     assert inputs["full"]["default"] == "false"
+    assert inputs["asdecided-version"]["default"] == "0.25.1"
     commands = " ".join(step.get("run", "") for step in action()["runs"]["steps"])
     assert "--full" in commands
-    assert "--base" in commands
+    assert '--base "$BASE"' in commands
+    assert "$SENTRY_MODE" not in commands
+    assert "$GITHUB_ENV" not in commands
 
 
 def test_sentry_uploads_one_sarif_and_resurfaces_exit():
