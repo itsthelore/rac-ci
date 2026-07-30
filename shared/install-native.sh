@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${1:-0.24.0}"
+version="${1:-0.26.0}"
 version="${version#v}"
 
 case "${RUNNER_OS:-}-$(uname -m)" in
@@ -41,6 +41,15 @@ case "$version:$archive" in
     ;;
   0.24.0:asdecided-x86_64-pc-windows-msvc.zip)
     digest="e3069423ecb523186ff8b7d798a93e55385fccf5851dad46b81d8bffae39486c"
+    ;;
+  0.26.0:asdecided-x86_64-unknown-linux-gnu.tar.gz)
+    digest="4d7f2fa85686af8d1006aa530928f60e2cd3d13d8560b303495f2784d1b8bbed"
+    ;;
+  0.26.0:asdecided-aarch64-apple-darwin.tar.gz)
+    digest="239d01eb638433bd45c4ee3c977899eaaac19601b31d1b07c9444992fcd19da1"
+    ;;
+  0.26.0:asdecided-x86_64-pc-windows-msvc.zip)
+    digest="bd30ac366cfb5066e61aa53460beb228f873e68e1bf050393973fac8010c13cb"
     ;;
   *)
     echo "::error::asdecided-ci does not have a verified checksum for asdecided-core $version"
