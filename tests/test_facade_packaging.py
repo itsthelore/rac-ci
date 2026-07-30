@@ -45,5 +45,5 @@ def test_packager_emits_root_actions_with_facade_relative_installer(tmp_path):
     assert "Deterministic code enforcement" in (
         sentry / "README.md"
     ).read_text(encoding="utf-8")
-    assert 'default: "0.25.1"' in (sentry / "action.yml").read_text(encoding="utf-8")
+    assert 'default: "0.26.0"' in (sentry / "action.yml").read_text(encoding="utf-8")
     assert not (output / "recordkeeper" / "action.yml").exists()

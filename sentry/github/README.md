@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: asdecided/sentry@v0.25.1
+      - uses: asdecided/sentry@v0.26.0
 ```
 
 By default, Sentry checks added lines against the pull request base and uploads
@@ -35,7 +35,7 @@ one SARIF report to GitHub Code Scanning.
 Use `full: "true"` to certify the complete repository tree:
 
 ```yaml
-      - uses: asdecided/sentry@v0.25.1
+      - uses: asdecided/sentry@v0.26.0
         with:
           full: "true"
 ```
@@ -76,7 +76,7 @@ unclassified.
 | `full` | `false` | Check the complete tree |
 | `upload-sarif` | `true` | Upload Code Scanning results |
 | `sarif-file` | `asdecided-sentry.sarif` | SARIF output path |
-| `asdecided-version` | `0.25.1` | Native release to install |
+| `asdecided-version` | `0.26.0` | Native release to install |
 
 Authoritative development lives in
 [asdecided/ci](https://github.com/asdecided/ci/tree/main/sentry).
