@@ -1,5 +1,7 @@
 # AsDecided CI
 
+[Product site](https://asdecided.com/) · [Decision-aware CI guide](https://asdecided.com/docs/vendor/core/decisions-on-pr/) · [Canonical sources](https://asdecided.com/sources)
+
 The CI delivery surface for [RAC](https://github.com/asdecided/core)
 (requirements-as-code) — one subdir per **capability**, with delivery platforms
 nested inside (`github/` first). Per ADR-092 (one repo per concern, subdir per
